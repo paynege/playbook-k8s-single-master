@@ -8,38 +8,67 @@
     hostname:
       name: "{{ inventory_hostname }}"
     tags: set_hostname
-  - name: Mkdir etcd
-    file:
-      path: /opt/etcd/{bin,cfg,ssl,ca}
-      state: directory
-  - name: Mkdir kubernetes
-    file:
-      path: /opt/kubernetes/{bin,cfg,ssl,ca}
-      state: directory
-  - name: Copy cfssl binary
+  - name: Mkdir etcd and kubernetes
+    shell: |
+      mkdir -p /opt/etcd/{{ item }}
+      mkdir -p /opt/kubernetes/{{ item }}
+    with_items:
+    - ca
+    - cfg
+    - bin
+    - ssl
+  - name: Copy cfssl binaries
     copy:
-      src: bin/{{ cfssl_binary }}
-      dest: /usr/local/bin/cfssl
+      src: bin/{{ item.binary }}
+      dest: /usr/local/bin/{{ item.name }}
       mode: u+x
-  - name: Copy cfssl-certinfo binary
-    copy:
-      src: bin/{{ cfssl-certinfo_binary }}
-      dest: /usr/local/bin/cfssl-certinfo
-      mode: u+x
-  - name: Copy cfssljson binary
-    copy:
-      src: bin/{{ cfssljson_binary }}
-      dest: /usr/local/bin/cfssljson
-      mode: u+x
-  - name: extract etcd binary
+    with_items:
+    - { name: 'cfssl', binary: '{{ cfssl_binary }}'}
+    - { name: 'cfssl-certinfo', binary: '{{ cfssl_certinfo_binary }}'}
+    - { name: 'cfssljson', binary: '{{ cfssljson_binary }}'}
+  - name: Extract etcd binary
     unarchive:
-      src: bin/{{ etcd_binary }}
+      src: bin/{{ etcd_gz_file }}
       dest: /root
+  - name: Get etcd directory
+    find:
+      path: /root
+      file_type: directory
+      patterns: 'etcd*'
+    register: etcd_path
   - name: Move etcd binary to /opt/etcd/bin/
     copy:
       remote_src: yes
-      src: 
-      - /root/etcd/etcd
-      - /root/etcd/etcdctl
+      src: '{{ etcd_path.files[0].path }}/{{ item }}'
       dest: /opt/etcd/bin/
-#  - name: Copy
+      mode: u+x
+    with_items:
+    - etcd
+    - etcdctl
+  - name: Extract kubernetes binary
+    unarchive:
+      src: bin/{{ kubernetes_gz_file }}
+      dest: /root
+  - name: Get k8s directory
+    find:
+      path: /root
+      file_type: directory
+      patterns: 'kubernetes*'
+    register: k8s_path
+  - name: Move kubernetes binary to /opt/kubernetes/bin/
+    copy:
+      remote_src: yes
+      src: '{{ k8s_path.files[0].path }}/server/bin/{{ item }}'
+      dest: /opt/kubernetes/bin/
+      mode: u+x
+    with_items:
+    - kube-apiserver
+    - kube-controller-manager
+    - kube-scheduler
+    - kubelet
+    - kube-proxy
+    - kubectl
+    - apiextensions-apiserver
+    - kube-aggregator
+    - kubeadm
+    - mounter

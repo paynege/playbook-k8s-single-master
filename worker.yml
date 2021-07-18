@@ -5,3 +5,15 @@
   - name: Set hostname
     hostname:
       name: "{{ inventory_hostname }}"
+  - name: Copy node host file
+    template:
+      src: template/node-host.conf.j2
+      dest: /root/node-host.conf
+  # - name: Get node host info
+  #   shell: cat /root/node-host.conf
+  #   register: result
+  # - name: Debug echo hostname to /etc/hosts
+  #   debug:
+  #     var: result
+  - name: Import node host Info to /etc/hosts
+    shell: cat /root/node-host.conf >> /etc/hosts
