@@ -1,8 +1,8 @@
 {
-    "CN": "system:kube-scheduler",
+    "CN": "system:kube-controller-manager",
     "hosts": [
       "127.0.0.1",
-      "192.168.1.110"
+      "{{ ansible_host }}"
     ],
     "key": {
       "algo": "rsa",
@@ -13,7 +13,7 @@
         "C": "CN",
         "L": "Shanghai",
         "ST": "Shanghai",
-        "O": "system:kube-scheduler",
+        "O": "system:kube-controller-manager",
         "OU": "System"
       }
     ]

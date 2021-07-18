@@ -1,7 +1,10 @@
-- name: Configure nodes initialization for Kubernetes cluster
+- name: Nodes initialization for Kubernetes cluster
   hosts: nodes
   become: True
   tasks:
+  - name: Set hostname
+    hostname:
+      name: "{{ inventory_hostname }}"
   - name: Show hostname
     command: hostname
   - name: Apt update
@@ -72,7 +75,6 @@
       state: started
   - name: Import containerd configuration file
     copy:
-      remote_src: yes
       src: cfg/containerd/config.toml
       dest: /etc/containerd/
   - name: Restart containerd
@@ -84,6 +86,12 @@
     shell: swapoff -a && sed -ri 's/.*swap.*/#&/' /etc/fstab
   - name: Disable ufw
     shell: ufw disable
+  - name: Copy node host file
+    template:
+      src: template/node-host.conf.j2
+      dest: /root/node-host.conf
+  - name: Import node host Info to /etc/hosts
+    shell: cat /root/node-host.conf >> /etc/hosts
   - name: Reboot
     reboot:
 
