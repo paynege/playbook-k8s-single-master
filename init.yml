@@ -1,0 +1,100 @@
+- name: Nodes initialization for Kubernetes cluster
+  hosts: nodes
+  become: True
+  tasks:
+  - name: Set hostname
+    hostname:
+      name: "{{ inventory_hostname }}"
+  - name: Show hostname
+    command: hostname
+  - name: Apt update
+    apt:
+      update_cache: True
+  - name: Apt upgrade
+    apt:
+      upgrade: full
+  - name: Install dependencies
+    apt:
+      pkg:
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - gnupg-agent
+      - software-properties-common
+      - ntp
+      - sshpass
+  - name: Install containerd
+    apt:
+      name: containerd
+  - name: Install ipvs dependencies
+    apt:
+      pkg: 
+      - conntrack
+      - jq
+  - name: Install ipvs
+    apt:
+      pkg:
+      - ipset
+      - ipvsadm
+      - tgt
+  - name: Set timezone to Asia/Shanghai
+    community.general.timezone:
+      name: Asia/Shanghai
+  - name: Enable NTP
+    systemd:
+      name: ntp
+      enabled: yes
+      state: started
+  # If ntp.service has started, no need to be set by timedatectl
+  #- name: Timedatectl set-ntp true
+  #  shell: /usr/bin/timedatectl set-ntp true
+  #  tags:
+  #  - enable_ntp_control
+  - name: Load overlay module
+    shell: modprobe overlay
+  - name: Load br_netfilter module
+    shell: modprobe br_netfilter
+  - name: Copy kubernetes cri configuration file
+    copy: 
+      src: cfg/99-kubernetes-cri.conf
+      dest: /etc/sysctl.d/99-kubernetes-cri.conf
+  - name: Load kubernetes-cri.conf
+    shell: sysctl --system
+  - name: Import ipvs modules to /etc/modules
+    shell: 'ls /lib/modules/$(uname -r)/kernel/net/netfilter/ipvs|grep -o "^[^.]*" >> /etc/modules'
+  - name: Enable nf_conntrack_ipv4
+    shell: echo nf_conntrack_ipv4 >> /etc/modules
+  - name: Enable tgt
+    systemd:
+      name: tgt
+      enabled: yes
+      state: started
+  - name: Enable iscsid
+    systemd:
+      name: iscsid
+      enabled: yes
+      state: started
+  # - name: Import containerd configuration file
+  #   copy:
+  #     src: cfg/containerd/config.toml
+  #     dest: /etc/containerd/
+  # - name: Restart containerd
+  #   systemd:
+  #     name: containerd
+  #     enabled: yes
+  #     state: restarted
+  - name: Disable swap
+    shell: swapoff -a && sed -ri 's/.*swap.*/#&/' /etc/fstab
+  - name: Disable ufw
+    shell: ufw disable
+  - name: Copy node host file
+    template:
+      src: template/node-host.conf.j2
+      dest: /root/node-host.conf
+  - name: Import node host Info to /etc/hosts
+    shell: cat /root/node-host.conf >> /etc/hosts
+  - name: Reboot
+    reboot:
+
+- include: master.yml
+- include: worker.yml
