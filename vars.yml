@@ -4,4 +4,6 @@ cfssl_binary: cfssl_1.4.1_linux_amd64
 cfssl_certinfo_binary: cfssl-certinfo_1.4.1_linux_amd64
 cfssljson_binary: cfssljson_1.4.1_linux_amd64
 
-pause_image_url: harbor.ge-tech.cc:6443/kubernetes/pause:3.3
+pause_image_url: k8s.gcr.io/pause:3.3
+
+master_node: master-1

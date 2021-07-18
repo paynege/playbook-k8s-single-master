@@ -227,4 +227,23 @@
     - kube-proxy
     tags:
     - start_worker_plane
-
+  - name: Fetch kubeconfig files to control machine
+    fetch:
+      src: /opt/kubernetes/ssl/{{ item }}
+      dest: ca/
+    with_items:
+    - bootstrap.kubeconfig
+    - kube-proxy.kubeconfig
+    - kubernetes-ca.pem
+    - admin.kubeconfig
+    tags:
+    - fetch_remote_kubeconfig
+  - name: Clean resources
+    file:
+      path: "{{ item }}"
+      state: absent
+    with_items:
+    - "{{ etcd_path.files[0].path }}"
+    - "{{ k8s_path.files[0].path }}"
+    tags:
+    - clean_resources

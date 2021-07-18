@@ -1,3 +1,6 @@
 # created by virtualenv automatically
 bin/*
-cfg/containerd/*
+cfg/containerd
+ca/*
+!ca/etcd
+!ca/kubernetes

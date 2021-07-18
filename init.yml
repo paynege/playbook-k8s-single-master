@@ -22,6 +22,7 @@
       - gnupg-agent
       - software-properties-common
       - ntp
+      - sshpass
   - name: Install containerd
     apt:
       name: containerd
@@ -73,15 +74,15 @@
       name: iscsid
       enabled: yes
       state: started
-  - name: Import containerd configuration file
-    copy:
-      src: cfg/containerd/config.toml
-      dest: /etc/containerd/
-  - name: Restart containerd
-    systemd:
-      name: containerd
-      enabled: yes
-      state: restarted
+  # - name: Import containerd configuration file
+  #   copy:
+  #     src: cfg/containerd/config.toml
+  #     dest: /etc/containerd/
+  # - name: Restart containerd
+  #   systemd:
+  #     name: containerd
+  #     enabled: yes
+  #     state: restarted
   - name: Disable swap
     shell: swapoff -a && sed -ri 's/.*swap.*/#&/' /etc/fstab
   - name: Disable ufw
@@ -95,5 +96,5 @@
   - name: Reboot
     reboot:
 
-#- include: master.yml
-#- include: worker.yml
+- include: master.yml
+- include: worker.yml
